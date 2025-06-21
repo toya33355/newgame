@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字早打ちゲーム</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .rank-display {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin-top: 10px;
+            font-size: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .comment-display {
+            background: rgba(255,215,0,0.9);
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin-top: 5px;
+            font-size: 16px;
+            max-width: 300px;
+            animation: commentPulse 2s ease-in-out;
+        }
+
+        @keyframes commentPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .input-area {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+        }
+
+        .input-field {
+            padding: 15px 20px;
+            font-size: 20px;
+            border: 3px solid #ff6b6b;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.9);
+            outline: none;
+            width: 300px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .enemy {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            animation: moveLeft 12s linear forwards;
+            z-index: 50;
+        }
+
+        .enemy-character {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-right: 20px;
+            position: relative;
+            animation: bounce 1s ease-in-out infinite alternate, glow 2s ease-in-out infinite alternate;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .enemy-text {
+            background: rgba(255,255,255,0.95);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border: 3px solid #333;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .typed {
+            color: #888;
+            text-decoration: line-through;
+        }
+
+        .current {
+            background-color: #ffeb3b;
+            padding: 2px;
+            border-radius: 3px;
+        }
+
+        /* エキセントリックなキャラクターデザイン */
+        .character-1 {
+            background: radial-gradient(circle, #ff69b4, #ff1493);
+            border: 6px solid #fff;
+        }
+        .character-1::before {
+            content: '👁️';
+            position: absolute;
+            left: 20px;
+            top: 15px;
+            font-size: 24px;
+            animation: blink 3s infinite;
+        }
+        .character-1::after {
+            content: '👁️';
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 24px;
+            animation: blink 3s infinite 0.5s;
+        }
+
+        .character-2 {
+            background: radial-gradient(circle, #00ff7f, #32cd32);
+            border: 6px solid #fff;
+        }
+        .character-2::before {
+            content: '🦷';
+            position: absolute;
+            left: 25px;
+            top: 30px;
+            font-size: 20px;
+            animation: wiggle 1s infinite;
+        }
+        .character-2::after {
+            content: '🦷';
+            position: absolute;
+            right: 25px;
+            top: 30px;
+            font-size: 20px;
+            animation: wiggle 1s infinite 0.5s;
+        }
+
+        .character-3 {
+            background: radial-gradient(circle, #ffa500, #ff4500);
+            border: 6px solid #fff;
+        }
+        .character-3::before {
+            content: '👻';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .character-4 {
+            background: radial-gradient(circle, #9400d3, #4b0082);
+            border: 6px solid #fff;
+        }
+        .character-4::before {
+            content: '🌟';
+            position: absolute;
+            left: 15px;
+            top: 10px;
+            font-size: 16px;
+            animation: sparkle 1.5s infinite;
+        }
+        .character-4::after {
+            content: '⚡';
+            position: absolute;
+            right: 15px;
+            bottom: 10px;
+            font-size: 16px;
+            animation: sparkle 1.5s infinite 0.7s;
+        }
+
+        .character-5 {
+            background: radial-gradient(circle, #ff6b6b, #ee5a52);
+            border: 6px solid #fff;
+        }
+        .character-5::before {
+            content: '🔥';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 28px;
+            animation: fire 0.5s infinite alternate;
+        }
+
+        .character-6 {
+            background: radial-gradient(circle, #4ecdc4, #26d0ce);
+            border: 6px solid #fff;
+        }
+        .character-6::before {
+            content: '❄️';
+            position: absolute;
+            left: 30px;
+            top: 20px;
+            font-size: 20px;
+            animation: spin 3s linear infinite;
+        }
+        .character-6::after {
+            content: '❄️';
+            position: absolute;
+            right: 30px;
+            bottom: 20px;
+            font-size: 20px;
+            animation: spin 3s linear infinite reverse;
+        }
+
+        @keyframes moveLeft {
+            from {
+                right: -400px;
+            }
+            to {
+                right: 100%;
+            }
+        }
+
+        @keyframes bounce {
+            0% {
+                transform: translateY(0px) rotate(-5deg);
+            }
+            100% {
+                transform: translateY(-10px) rotate(5deg);
+            }
+        }
+
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 20px rgba(255,255,255,0.5);
+            }
+            100% {
+                box-shadow: 0 0 40px rgba(255,255,255,0.8), 0 0 60px rgba(255,255,255,0.4);
+            }
+        }
+
+        @keyframes blink {
+            0%, 90% {
+                opacity: 1;
+            }
+            95% {
+                opacity: 0.1;
+            }
+        }
+
+        @keyframes wiggle {
+            0%, 100% {
+                transform: rotate(-3deg);
+            }
+            50% {
+                transform: rotate(3deg);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(-50%, -50%) translateY(0px);
+            }
+            50% {
+                transform: translate(-50%, -50%) translateY(-5px);
+            }
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes fire {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .explosion {
+            position: absolute;
+            pointer-events: none;
+            z-index: 200;
+        }
+
+        .explosion-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: explode 0.8s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0) translate(var(--dx), var(--dy));
+                opacity: 0;
+            }
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .restart-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="ui">
+            <div>スコア: <span id="score">0</span></div>
+            <div>ライフ: <span id="lives">5</span></div>
+            <div class="rank-display" id="rankDisplay">ランク: 初心者</div>
+            <div class="comment-display" id="commentDisplay" style="display: none;"></div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" class="input-field" id="inputField" placeholder="ここに文字を入力...">
+        </div>
+
+        <div class="game-over" id="gameOver">
+            <div>ゲームオーバー！</div>
+            <div>最終スコア: <span id="finalScore">0</span></div>
+            <button class="restart-btn" onclick="restartGame()">もう一度プレイ</button>
+        </div>
+    </div>
+
+    <script>
+        class TypingGame {
+            constructor() {
+                this.score = 0;
+                this.lives = 5;
+                this.enemies = [];
+                this.gameRunning = true;
+                this.enemyId = 0;
+                this.currentRank = '初心者';
+                this.lastCommentScore = 0;
+                
+                this.words = [
+                    // 基本の挨拶・感情
+                    'おはようございます', 'こんにちは', 'こんばんは', 'ありがとう', 'ありがとうございます',
+                    'がんばって', 'おつかれさま', 'おめでとう', 'すみません', 'ごめんなさい',
+                    'だいじょうぶ', 'げんき', 'しあわせ', 'たのしい', 'うれしい', 'かなしい',
+                    
+                    // 食べ物
+                    'らーめん', 'すし', 'てんぷら', 'やきとり', 'おにぎり', 'べんとう',
+                    'たこやき', 'おこのみやき', 'うどん', 'そば', 'とんかつ', 'からあげ',
+                    'ちゃーはん', 'ぎょうざ', 'やきにく', 'しゃぶしゃぶ', 'すきやき',
+                    
+                    // 動物
+                    'ねこ', 'いぬ', 'うさぎ', 'はむすたー', 'ぱんだ', 'らいおん',
+                    'ぞう', 'きりん', 'ぺんぎん', 'いるか', 'くじら', 'さめ',
+                    
+                    // 色・自然
+                    'あか', 'あお', 'きいろ', 'みどり', 'むらさき', 'ぴんく',
+                    'そら', 'うみ', 'やま', 'かわ', 'もり', 'はな', 'き', 'くさ',
+                    'たいよう', 'つき', 'ほし', 'くも', 'あめ', 'ゆき',
+                    
+                    // 日常・物
+                    'でんわ', 'てれび', 'らじお', 'くるま', 'でんしゃ', 'ひこうき',
+                    'かさ', 'かばん', 'とけい', 'めがね', 'くつ', 'ふく',
+                    
+                    // 学校・勉強
+                    'がっこう', 'せんせい', 'がくせい', 'べんきょう', 'しゅくだい',
+                    'てすと', 'じゅぎょう', 'きょうしつ', 'としょかん', 'たいいくかん',
+                    
+                    // 技術・趣味
+                    'ぷろぐらみんぐ', 'こんぴゅーた', 'いんたーねっと', 'すまーとふぉん',
+                    'げーむ', 'あにめ', 'まんが', 'おんがく', 'えいが', 'どくしょ',
+                    
+                    // 難しい言葉
+                    'じんこうちのう', 'ばーちゃるりありてぃ', 'ぶろっくちぇーん',
+                    'ますたーぷらんにんぐ', 'いんふらすとらくちゃー', 'あーきてくちゃー',
+                    'でぃーぷらーにんぐ', 'まっしーんらーにんぐ', 'びっぐでーた',
+                    
+                    // 長い文章
+                    'きょうはとてもいいてんきですね', 'あしたのよていはきまりましたか',
+                    'らいしゅうまつにえいがをみにいきませんか', 'このれすとらんのりょうりはおいしいです',
+                    'にほんごのべんきょうはたのしいですか', 'せんせいのせつめいはわかりやすかったです'
+                ];
+                
+                this.inputField = document.getElementById('inputField');
+                this.scoreElement = document.getElementById('score');
+                this.livesElement = document.getElementById('lives');
+                this.gameOverElement = document.getElementById('gameOver');
+                this.rankElement = document.getElementById('rankDisplay');
+                this.commentElement = document.getElementById('commentDisplay');
+                
+                this.init();
+            }
+            
+            init() {
+                this.inputField.addEventListener('input', () => this.handleInput());
+                this.inputField.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                this.inputField.focus();
+                this.spawnEnemies();
+            }
+            
+            spawnEnemies() {
+                if (!this.gameRunning) return;
+                
+                this.createEnemy();
+                
+                const nextSpawn = Math.random() * 2000 + 1500; // 1.5-3.5秒間隔
+                setTimeout(() => this.spawnEnemies(), nextSpawn);
+            }
+            
+            createEnemy() {
+                const word = this.words[Math.floor(Math.random() * this.words.length)];
+                const characterType = Math.floor(Math.random() * 6) + 1;
+                const yPosition = Math.random() * (window.innerHeight - 200) + 50;
+                
+                const enemy = {
+                    id: this.enemyId++,
+                    word: word,
+                    typed: '',
+                    element: null,
+                    y: yPosition,
+                    characterType: characterType,
+                    readyToDestroy: false
+                };
+                
+                this.createEnemyElement(enemy);
+                this.enemies.push(enemy);
+                
+                // 12秒後に敵を削除（画面外に出た場合）
+                setTimeout(() => {
+                    if (this.enemies.some(e => e.id === enemy.id)) {
+                        this.removeEnemy(enemy.id);
+                        this.loseLife();
+                    }
+                }, 12000);
+            }
+            
+            createEnemyElement(enemy) {
+                const enemyDiv = document.createElement('div');
+                enemyDiv.className = 'enemy';
+                enemyDiv.style.top = enemy.y + 'px';
+                
+                const character = document.createElement('div');
+                character.className = `enemy-character character-${enemy.characterType}`;
+                
+                const textDiv = document.createElement('div');
+                textDiv.className = 'enemy-text';
+                textDiv.innerHTML = this.formatText(enemy.word, enemy.typed);
+                
+                enemyDiv.appendChild(character);
+                enemyDiv.appendChild(textDiv);
+                
+                enemy.element = enemyDiv;
+                enemy.textElement = textDiv;
+                
+                document.querySelector('.game-container').appendChild(enemyDiv);
+            }
+            
+            formatText(word, typed, isPreview = false) {
+                let result = '';
+                if (isPreview) {
+                    // プレビュー表示（部分一致時）
+                    for (let i = 0; i < word.length; i++) {
+                        if (i < typed.length) {
+                            result += `<span class="current">${word[i]}</span>`;
+                        } else {
+                            result += word[i];
+                        }
+                    }
+                } else {
+                    // 通常表示または完全一致時
+                    for (let i = 0; i < word.length; i++) {
+                        if (i < typed.length) {
+                            result += `<span class="typed">${word[i]}</span>`;
+                        } else if (i === typed.length && typed === word) {
+                            result += `<span class="current">${word[i]}</span>`;
+                        } else {
+                            result += word[i];
+                        }
+                    }
+                }
+                return result;
+            }
+            
+            handleInput() {
+                const input = this.inputField.value;
+                
+                // 入力に一致する敵を探してハイライト表示のみ
+                for (let enemy of this.enemies) {
+                    if (enemy.word === input) {
+                        enemy.typed = input;
+                        enemy.textElement.innerHTML = this.formatText(enemy.word, enemy.typed);
+                        enemy.readyToDestroy = true;
+                        break;
+                    } else if (enemy.word.startsWith(input) && input.length > 0) {
+                        enemy.typed = '';
+                        enemy.textElement.innerHTML = this.formatText(enemy.word, input, true);
+                        enemy.readyToDestroy = false;
+                        break;
+                    }
+                }
+            }
+            
+            handleKeyDown(event) {
+                if (event.key === 'Enter') {
+                    const input = this.inputField.value;
+                    
+                    // 完全一致する敵を探して破壊
+                    for (let enemy of this.enemies) {
+                        if (enemy.word === input && enemy.readyToDestroy) {
+                            this.destroyEnemy(enemy);
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            destroyEnemy(enemy) {
+                this.score += enemy.word.length * 10;
+                this.scoreElement.textContent = this.score;
+                
+                this.updateRankAndComment();
+                this.createExplosion(enemy.element);
+                this.removeEnemy(enemy.id);
+                
+                // 入力欄をクリアしてフォーカスを戻す
+                this.inputField.value = '';
+                this.inputField.focus();
+            }
+            
+            updateRankAndComment() {
+                const ranks = [
+                    { threshold: 0, rank: '初心者', comments: ['がんばって！', 'いいスタートです！'] },
+                    { threshold: 500, rank: '見習い', comments: ['なかなかやりますね！', '調子が出てきました！'] },
+                    { threshold: 1000, rank: '中級者', comments: ['素晴らしい！', 'いい感じです！'] },
+                    { threshold: 2000, rank: '上級者', comments: ['すごいです！', 'とても上手ですね！'] },
+                    { threshold: 3500, rank: 'エキスパート', comments: ['あなたはすごいです！', '驚異的な速度です！'] },
+                    { threshold: 5000, rank: 'マスター', comments: ['信じられません！', '１００人に一人の才能です！'] },
+                    { threshold: 7500, rank: 'レジェンド', comments: ['伝説的です！', '１０００人に一人の天才です！'] },
+                    { threshold: 10000, rank: 'ゴッド', comments: ['神の領域です！', '１万人に一人の逸材です！'] },
+                    { threshold: 15000, rank: '超越者', comments: ['人間を超越しました！', '１０万人に一人の才能です！'] },
+                    { threshold: 20000, rank: '究極', comments: ['究極の存在です！', '１００万人に一人の才能です！'] }
+                ];
+                
+                let newRank = this.currentRank;
+                let shouldShowComment = false;
+                
+                for (let i = ranks.length - 1; i >= 0; i--) {
+                    if (this.score >= ranks[i].threshold) {
+                        if (ranks[i].rank !== this.currentRank) {
+                            newRank = ranks[i].rank;
+                            shouldShowComment = true;
+                        }
+                        break;
+                    }
+                }
+                
+                // ランクが変わった場合またはスコアが一定間隔で増えた場合にコメント表示
+                if (shouldShowComment || (this.score - this.lastCommentScore >= 1000 && this.score > 1000)) {
+                    this.currentRank = newRank;
+                    this.rankElement.textContent = `ランク: ${this.currentRank}`;
+                    
+                    const currentRankData = ranks.find(r => r.rank === this.currentRank);
+                    const comment = currentRankData.comments[Math.floor(Math.random() * currentRankData.comments.length)];
+                    
+                    this.showComment(comment);
+                    this.lastCommentScore = this.score;
+                }
+            }
+            
+            showComment(comment) {
+                this.commentElement.textContent = comment;
+                this.commentElement.style.display = 'block';
+                this.commentElement.style.animation = 'none';
+                setTimeout(() => {
+                    this.commentElement.style.animation = 'commentPulse 2s ease-in-out';
+                }, 10);
+                
+                setTimeout(() => {
+                    this.commentElement.style.display = 'none';
+                }, 3000);
+            }
+            
+            createExplosion(element) {
+                const rect = element.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                const explosion = document.createElement('div');
+                explosion.className = 'explosion';
+                explosion.style.left = centerX + 'px';
+                explosion.style.top = centerY + 'px';
+                
+                const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff'];
+                
+                for (let i = 0; i < 15; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'explosion-particle';
+                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    const angle = (i / 15) * Math.PI * 2;
+                    const distance = Math.random() * 100 + 50;
+                    const dx = Math.cos(angle) * distance;
+                    const dy = Math.sin(angle) * distance;
+                    
+                    particle.style.setProperty('--dx', dx + 'px');
+                    particle.style.setProperty('--dy', dy + 'px');
+                    
+                    explosion.appendChild(particle);
+                }
+                
+                document.body.appendChild(explosion);
+                
+                setTimeout(() => {
+                    explosion.remove();
+                }, 800);
+            }
+            
+            removeEnemy(id) {
+                const index = this.enemies.findIndex(e => e.id === id);
+                if (index !== -1) {
+                    const enemy = this.enemies[index];
+                    if (enemy.element && enemy.element.parentNode) {
+                        enemy.element.remove();
+                    }
+                    this.enemies.splice(index, 1);
+                }
+            }
+            
+            loseLife() {
+                this.lives--;
+                this.livesElement.textContent = this.lives;
+                
+                if (this.lives <= 0) {
+                    this.gameOver();
+                }
+            }
+            
+            gameOver() {
+                this.gameRunning = false;
+                document.getElementById('finalScore').textContent = this.score;
+                this.gameOverElement.style.display = 'block';
+            }
+        }
+        
+        function restartGame() {
+            // 既存の敵を全て削除
+            document.querySelectorAll('.enemy').forEach(enemy => enemy.remove());
+            document.querySelectorAll('.explosion').forEach(explosion => explosion.remove());
+            
+            // ゲームオーバー画面を隠す
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // 新しいゲームを開始
+            new TypingGame();
+        }
+        
+        // ゲーム開始
+        const game = new TypingGame();
+    </script>
+</body>
+</html>
